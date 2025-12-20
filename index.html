@@ -1,108 +1,628 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Pulse Pro - Solar & Weather</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-black text-white overflow-hidden">
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
+    <title>Global Pulse - Solar & Polluted Cities</title>  
+    <script src="https://cdn.tailwindcss.com"></script>  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>  
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>  
+    <style>  
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');  :root { --blue-glow: rgba(59, 130, 246, 0.5); }  
+    body { margin: 0; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; background-color: #000; color: white; touch-action: manipulation; }  
 
-    <div id="loading-overlay" class="fixed inset-0 flex flex-col items-center justify-center bg-black z-[9999]">
-        <div class="loader-ring"></div>
-        <h1 class="text-2xl font-black tracking-[0.5em] text-blue-500 animate-pulse">GLOBAL PULSE</h1>
-        <div id="loader-bar-container" class="mt-8 w-64 h-1 bg-white/10 rounded-full overflow-hidden">
-            <div id="loader-bar" class="h-full bg-blue-500 w-0 transition-all duration-300"></div>
-        </div>
-    </div>
+    /* Interactive feedback */  
+    .interactive {   
+        pointer-events: auto;   
+        transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;  
+        cursor: pointer;  
+    }  
+    .interactive:active {  
+        transform: scale(0.95);  
+    }  
 
-    <div id="canvas-container"></div>
-    <div id="menu-backdrop"></div>
+    /* Modern Loading Overlay */  
+    #loading-overlay {   
+        z-index: 9999;   
+        background: radial-gradient(circle at center, #0a0a1a 0%, #000 100%);  
+        transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);  
+    }  
 
-    <main class="ui-layer p-4 md:p-8 flex flex-col h-screen relative z-10 pointer-events-none">
-        <div class="flex flex-col md:flex-row justify-between items-start gap-4 pointer-events-auto">
-            <div class="flex gap-2">
-                <div class="glass p-4 border-l-4 border-blue-500">
-                    <h1 class="text-xs font-black tracking-widest uppercase">Global Pulse v2.0</h1>
-                </div>
-                <button id="open-menu" class="glass p-4 hover:bg-white/10 transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7" stroke-width="2" stroke-linecap="round"/></svg>
-                </button>
-            </div>
+    .loader-ring {  
+        position: absolute;  
+        width: 200px;  
+        height: 200px;  
+        border-radius: 50%;  
+        border: 2px solid transparent;  
+        border-top-color: #3b82f6;  
+        animation: spin 2s linear infinite;  
+    }  
+    .loader-ring:nth-child(2) {  
+        width: 160px;  
+        height: 160px;  
+        border-top-color: #1d4ed8;  
+        animation: spin 1.5s linear reverse infinite;  
+    }  
+    .loader-ring:nth-child(3) {  
+        width: 120px;  
+        height: 120px;  
+        border-top-color: #60a5fa;  
+        animation: spin 3s linear infinite;  
+    }  
 
-            <div class="relative w-full md:w-[400px]">
-                <div class="glass p-1.5 flex gap-2 border border-white/10">
-                    <input id="search-input" type="text" placeholder="Sheher ka naam..." class="bg-transparent outline-none px-4 w-full text-sm">
-                    <button id="search-go" class="bg-blue-600 px-6 py-2 rounded-xl font-bold text-[10px] uppercase">Search</button>
-                </div>
-                <div id="results-dropdown" class="absolute top-full left-0 w-full mt-2 glass hidden z-50 overflow-hidden"></div>
-            </div>
-        </div>
+    @keyframes spin {  
+        to { transform: rotate(360deg); }  
+    }  
 
-        <div class="mt-auto flex flex-col gap-4 pointer-events-auto">
-            <div id="data-card" class="glass p-6 md:p-8 border-b-4 border-blue-500 max-w-[600px]">
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 id="city-name" class="text-4xl md:text-6xl font-black uppercase tracking-tighter">Delhi</h2>
-                        <p id="country-name" class="text-[10px] opacity-40 font-bold tracking-widest">INDIA</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[8px] opacity-30 font-black uppercase">AQI Index</p>
-                        <p id="aqi-val" class="text-5xl font-black">--</p>
-                    </div>
-                </div>
+    .pulse-text {  
+        animation: pulse-glow 2s ease-in-out infinite;  
+    }  
+    @keyframes pulse-glow {  
+        0%, 100% { opacity: 0.5; filter: blur(1px); }  
+        50% { opacity: 1; filter: blur(0px); text-shadow: 0 0 15px #3b82f6; }  
+    }  
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                        <p class="text-[8px] opacity-30 uppercase font-black">Tapman</p>
-                        <p class="text-xl font-black"><span id="temp-val">--</span><span class="text-blue-400 text-xs">°C</span></p>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                        <p class="text-[8px] opacity-30 uppercase font-black">Hawa (Wind)</p>
-                        <div class="flex items-center gap-2">
-                            <div id="wind-arrow" class="text-blue-400 transition-transform duration-1000">↑</div>
-                            <p class="text-xl font-black"><span id="wind-val">--</span><span class="text-[10px] text-blue-400">km/h</span></p>
-                        </div>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                        <p class="text-[8px] opacity-30 uppercase font-black">Humidity</p>
-                        <p class="text-xl font-black"><span id="humidity-val">--</span><span class="text-blue-400 text-xs">%</span></p>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                        <p class="text-[8px] opacity-30 uppercase font-black">Mausam</p>
-                        <p id="weather-label" class="text-[9px] font-black uppercase text-blue-400 truncate">Loading...</p>
-                    </div>
-                </div>
+    .scanline {  
+        position: absolute;  
+        top: 0; left: 0; width: 100%; height: 100%;  
+        background: linear-gradient(to bottom, transparent 0%, rgba(59, 130, 246, 0.05) 50%, transparent 100%);  
+        background-size: 100% 4px;  
+        animation: scan 4s linear infinite;  
+        pointer-events: none;  
+    }  
+    @keyframes scan {  
+        from { transform: translateY(-100%); }  
+        to { transform: translateY(100%); }  
+    }  
 
-                <div class="border-t border-white/10 pt-4">
-                    <p class="text-[8px] opacity-30 font-black uppercase mb-3">Agle 7 Din Ka Forecast</p>
-                    <div id="forecast-row" class="flex gap-2 overflow-x-auto pb-2 custom-scroll">
-                        </div>
-                </div>
-            </div>
-        </div>
-    </main>
+    /* Standard UI Styles */  
+    .glass { background: rgba(5, 5, 12, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }  
+    #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }  
+    .ui-layer { position: relative; z-index: 10; pointer-events: none; height: 100vh; display: flex; flex-direction: column; }  
 
-    <div id="side-menu" class="fixed top-0 right-0 h-full w-[320px] glass z-[100] translate-x-full transition-transform duration-500 flex flex-col">
-        <div class="p-6 border-b border-white/10 flex justify-between items-center">
-            <h2 class="text-xs font-black uppercase text-blue-400">Settings</h2>
-            <button id="close-menu" class="text-white/50 hover:text-white">✕</button>
-        </div>
-        <div class="p-6 space-y-6 flex-1 overflow-y-auto custom-scroll">
-            <div class="flex justify-between items-center">
-                <span class="text-[10px] font-bold uppercase">Solar Sync</span>
-                <label class="toggle-switch"><input type="checkbox" id="solar-toggle"><span class="slider"></span></label>
-            </div>
-            <div id="polluted-city-list" class="space-y-2">
-                <p class="text-[9px] opacity-30 font-black uppercase">Pradushit Sheher</p>
-            </div>
-        </div>
-    </div>
+    /* Side Menu and Backdrop */  
+    #menu-backdrop {  
+        position: fixed;  
+        inset: 0;  
+        background: rgba(0,0,0,0.4);  
+        opacity: 0;  
+        pointer-events: none;  
+        transition: opacity 0.4s ease;  
+        z-index: 90;  
+    }  
+    #menu-backdrop.open {  
+        opacity: 1;  
+        pointer-events: auto;  
+    }  
 
-    <script src="script.js"></script>
-</body>
-</html>
+    #side-menu {  
+        transform: translateX(100%);  
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);  
+        z-index: 100;  
+    }  
+    #side-menu.open { transform: translateX(0); }  
+
+    .custom-scroll::-webkit-scrollbar { width: 4px; }  
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }  
+
+    .toggle-switch {  
+        position: relative;  
+        display: inline-block;  
+        width: 44px;  
+        height: 24px;  
+    }  
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }  
+    .slider {  
+        position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;  
+        background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 24px;  
+    }  
+    .slider:before {  
+        position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;  
+        background-color: white; transition: .4s; border-radius: 50%;  
+    }  
+    input:checked + .slider { background-color: #3b82f6; }  
+    input:checked + .slider:before { transform: translateX(20px); }  
+
+    .polluted-city-card {  
+        background: rgba(255, 255, 255, 0.03);  
+        border-left: 2px solid #ef4444;  
+    }  
+    .polluted-city-card:hover { background: rgba(239, 68, 68, 0.1); }  
+
+    .risk-badge { padding: 4px 10px; border-radius: 50px; font-size: 9px; font-weight: 800; text-transform: uppercase; }  
+
+    #city-list-container {  
+        max-height: 0;  
+        overflow: hidden;  
+        transition: max-height 0.5s ease-out;  
+    }  
+    #city-list-container.show {  
+        max-height: 1000px;  
+    }  
+</style>
+
+</head>  
+<body class="bg-black">  <!-- Loading Screen -->  
+<div id="loading-overlay" class="fixed inset-0 flex flex-col items-center justify-center bg-black overflow-hidden">  
+    <div class="scanline"></div>  
+    <div class="relative flex items-center justify-center mb-12">  
+        <div class="loader-ring"></div>  
+        <div class="loader-ring"></div>  
+        <div class="loader-ring"></div>  
+        <div class="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_20px_#3b82f6]"></div>  
+    </div>  
+    <div class="text-center relative">  
+        <h1 class="text-3xl font-black uppercase tracking-[0.4em] mb-2 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">  
+            GLOBAL PULSE  
+        </h1>  
+        <div class="flex flex-col items-center">  
+            <p class="pulse-text text-[10px] uppercase font-bold tracking-[0.3em] text-blue-400/80">  
+                Satellite Link Sthapit kiya ja raha hai...  
+            </p>  
+            <div class="mt-4 w-48 h-[1px] bg-white/10 relative overflow-hidden">  
+                <div id="loader-bar" class="absolute left-0 top-0 h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>  
+            </div>  
+            <p id="loader-percent" class="mt-2 text-[8px] font-mono text-white/30 tracking-widest">00%</p>  
+        </div>  
+    </div>  
+</div>  
+
+<div id="canvas-container"></div>  
+
+<!-- Backdrop for closing menu on outside click -->  
+<div id="menu-backdrop"></div>  
+
+<!-- Side Menu -->  
+<div id="side-menu" class="fixed top-0 right-0 h-full w-full sm:w-[380px] glass rounded-none border-l border-white/10 flex flex-col shadow-2xl overflow-hidden">  
+    <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">  
+        <div>  
+            <h2 class="text-xs font-black uppercase tracking-widest text-blue-400">Control Center</h2>  
+            <p class="text-[9px] opacity-40 uppercase font-bold">Prithvi Simulation Settings</p>  
+        </div>  
+        <!-- Cross button (Already there, now ensures toggle state) -->  
+        <button id="close-menu" class="interactive p-2 hover:bg-white/10 rounded-full transition-all text-white/70 hover:text-white">  
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>  
+        </button>  
+    </div>  
+
+    <div class="flex-1 overflow-y-auto p-5 space-y-6 custom-scroll">  
+        <div class="bg-white/5 rounded-2xl p-5 border border-white/10">  
+            <div class="flex justify-between items-center mb-4">  
+                <div>  
+                    <p class="text-[10px] font-black uppercase tracking-widest text-yellow-400">Solar Sync</p>  
+                    <p class="text-[9px] opacity-40 uppercase font-bold">UTC Time Lighting</p>  
+                </div>  
+                <label class="toggle-switch interactive">  
+                    <input type="checkbox" id="solar-toggle">  
+                    <span class="slider"></span>  
+                </label>  
+            </div>  
+            <p id="solar-desc" class="text-[10px] text-white/50 leading-relaxed italic">  
+                Static studio light ka upyog ho raha hai. Isay on karein real-time lighting ke liye.  
+            </p>  
+        </div>  
+
+        <div class="space-y-4">  
+            <button id="toggle-city-list" class="interactive w-full py-4 glass border border-red-500/30 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-500/10 transition-all text-red-500">  
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/></svg>  
+                Duniya ke 10 Sabse Pradushit Sheher  
+                <svg id="chevron-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>  
+            </button>  
+
+            <div id="city-list-container" class="space-y-2">  
+                <div id="polluted-city-list" class="grid grid-cols-1 gap-2"></div>  
+            </div>  
+        </div>  
+    </div>  
+
+    <div class="p-5 border-t border-white/5 bg-white/5">  
+        <button onclick="resetCamera()" class="interactive w-full py-4 glass text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all">  
+            Camera Reset Karein  
+        </button>  
+    </div>  
+</div>  
+
+<!-- UI Overlay -->  
+<main class="ui-layer p-4 md:p-10">  
+    <div class="flex flex-col md:flex-row justify-between items-start gap-4">  
+        <div class="flex w-full md:w-auto justify-between md:justify-start gap-3">  
+            <div class="glass p-4 md:p-5 flex items-center gap-4 border-l-4 border-blue-500">  
+                <div class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse"></div>  
+                <div>  
+                    <h1 class="text-[11px] md:text-xs font-black uppercase tracking-widest">Global Pulse</h1>  
+                </div>  
+            </div>  
+            <!-- Menu Button (Toggle logic added) -->  
+            <button id="open-menu" class="interactive glass p-4 md:p-5 px-5 hover:bg-white/10 transition-all">  
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>  
+            </button>  
+        </div>  
+
+        <div class="relative w-full md:w-[420px]">  
+            <div class="glass p-1.5 flex items-center pl-4 gap-2 border border-white/10 focus-within:border-blue-500 transition-colors">  
+                <input id="search-input" type="text" placeholder="Sheher ka naam likhein..." class="interactive bg-transparent border-none outline-none text-sm w-full px-2 placeholder:text-white/20 font-medium">  
+                <button id="search-go" class="interactive bg-blue-600 hover:bg-blue-500 text-white p-3 px-6 rounded-xl transition-all">  
+                    <span class="text-[10px] font-black uppercase tracking-widest">Search</span>  
+                </button>  
+            </div>  
+            <div id="results-dropdown" class="absolute top-full left-0 w-full mt-2 glass hidden overflow-hidden z-50"></div>  
+        </div>  
+    </div>  
+
+    <div class="mt-auto flex flex-col md:flex-row items-end justify-between gap-6">  
+        <div id="data-card" class="glass p-6 md:p-8 border-b-4 border-blue-500 transition-all duration-500 w-full md:max-w-[550px]">  
+            <div class="flex justify-between items-start mb-6">  
+                <div>  
+                    <h2 id="city-name" class="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none">Delhi</h2>  
+                    <p id="country-name" class="text-[9px] uppercase opacity-40 font-bold tracking-[0.2em] mt-2">India</p>  
+                </div>  
+                <div class="text-right">  
+                    <p class="text-[8px] uppercase font-black opacity-30 mb-1">AQI Index</p>  
+                    <p id="aqi-val" class="text-5xl md:text-6xl font-black leading-none">--</p>  
+                </div>  
+            </div>  
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">  
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">  
+                    <p class="text-[8px] uppercase font-black opacity-30 mb-1">Tapman</p>  
+                    <p class="text-xl font-black truncate"><span id="temp-val">--</span><span class="text-xs text-blue-400">°C</span></p>  
+                </div>  
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">  
+                    <p class="text-[8px] uppercase font-black opacity-30 mb-1">Humidity</p>  
+                    <p class="text-xl font-black truncate"><span id="humidity-val">--</span><span class="text-xs text-blue-400">%</span></p>  
+                </div>  
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">  
+                    <p class="text-[8px] uppercase font-black opacity-30 mb-1">Hawa</p>  
+                    <p class="text-xl font-black truncate"><span id="wind-val">--</span><span class="text-[10px] text-blue-400 ml-0.5">km/h</span></p>  
+                </div>  
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">  
+                    <p class="text-[8px] uppercase font-black opacity-30 mb-1">Mausam</p>  
+                    <p id="weather-label" class="text-[9px] font-black uppercase tracking-tight text-blue-400 mt-1 truncate">Jaanch jaari hai...</p>  
+                </div>  
+            </div>  
+
+            <div class="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/10">  
+                <div class="flex items-center justify-between mb-2">  
+                    <p class="text-[9px] font-black uppercase tracking-widest text-white/30">Suraksha Salah</p>  
+                    <div id="aqi-status" class="risk-badge bg-white/10">--</div>  
+                </div>  
+                <p id="advisory-box" class="text-[10px] md:text-[11px] font-semibold leading-relaxed text-white/70 italic">  
+                    Data load ho raha hai...  
+                </p>  
+            </div>  
+        </div>  
+
+        <div class="hidden md:block glass p-6 px-10 text-right">  
+            <p id="digital-clock" class="text-5xl font-black tracking-tighter">00:00:00</p>  
+            <p id="utc-label" class="text-[8px] font-black opacity-20 tracking-[0.4em] uppercase mt-1">UTC Synchronizing...</p>  
+        </div>  
+    </div>  
+</main>  
+
+<script>  
+    let scene, camera, renderer, globe, clouds, controls, marker, pulseMarker, sunLight, ambientLight, globeGroup;  
+    let isSolarSync = false;  
+
+    const weatherMap = {  
+        0: "Saaf Aasman", 1: "Saaf", 2: "Thode Badal", 3: "Badal",  
+        45: "Kohar", 48: "Bhaari Kohar", 51: "Boonda-baandi", 61: "Baarish",  
+        71: "Slight Barf", 80: "Bauchaar", 95: "Toofan"  
+    };  
+
+    const pollutedCities = [  
+        { name: "Lahore", lat: 31.52, lon: 74.35, country: "Pakistan", level: "Hazardous" },  
+        { name: "Delhi", lat: 28.61, lon: 77.20, country: "India", level: "Severe" },  
+        { name: "Dhaka", lat: 23.81, lon: 90.41, country: "Bangladesh", level: "Very High" },  
+        { name: "Karachi", lat: 24.86, lon: 67.00, country: "Pakistan", level: "High" },  
+        { name: "Beijing", lat: 39.90, lon: 116.40, country: "China", level: "High" },  
+        { name: "Mumbai", lat: 19.07, lon: 72.87, country: "India", level: "Moderate" },  
+        { name: "Baghdad", lat: 33.31, lon: 44.36, country: "Iraq", level: "High" },  
+        { name: "Cairo", lat: 30.04, lon: 31.23, country: "Egypt", level: "High" },  
+        { name: "Kolkata", lat: 22.57, lon: 88.36, country: "India", level: "High" },  
+        { name: "Shenyang", lat: 41.80, lon: 123.43, country: "China", level: "High" }  
+    ];  
+
+    function init() {  
+        scene = new THREE.Scene();  
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);  
+        camera.position.z = window.innerWidth < 768 ? 550 : 450;  
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });  
+        renderer.setSize(window.innerWidth, window.innerHeight);  
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));  
+        document.getElementById('canvas-container').appendChild(renderer.domElement);  
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);  
+        controls.enableDamping = true;  
+        controls.autoRotate = true;  
+        controls.autoRotateSpeed = 0.5;  
+
+        globeGroup = new THREE.Group();  
+        scene.add(globeGroup);  
+
+        const loader = new THREE.TextureLoader();  
+
+        // Loading progress simulation  
+        let progress = 0;  
+        const interval = setInterval(() => {  
+            progress += Math.random() * 20;  
+            if (progress >= 100) { progress = 100; clearInterval(interval); finishLoading(); }  
+            const bar = document.getElementById('loader-bar');  
+            const txt = document.getElementById('loader-percent');  
+            if (bar) bar.style.width = progress + '%';  
+            if (txt) txt.innerText = Math.floor(progress).toString().padStart(2, '0') + '%';  
+        }, 150);  
+
+        globe = new THREE.Mesh(  
+            new THREE.SphereGeometry(100, 64, 64),  
+            new THREE.MeshPhongMaterial({  
+                map: loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),  
+                bumpMap: loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),  
+                bumpScale: 1.5,  
+                specular: new THREE.Color(0x333333),  
+                shininess: 5  
+            })  
+        );  
+        globeGroup.add(globe);  
+
+        clouds = new THREE.Mesh(  
+            new THREE.SphereGeometry(101.5, 64, 64),  
+            new THREE.MeshPhongMaterial({  
+                map: loader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png'),  
+                transparent: true, opacity: 0.4  
+            })  
+        );  
+        globeGroup.add(clouds);  
+
+        ambientLight = new THREE.AmbientLight(0xffffff, 0.5);  
+        scene.add(ambientLight);  
+
+        sunLight = new THREE.DirectionalLight(0xffffff, 1.2);  
+        sunLight.position.set(500, 300, 400);   
+        scene.add(sunLight);  
+
+        marker = new THREE.Mesh(new THREE.CircleGeometry(2, 32), new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide }));  
+        marker.visible = false;  
+        globeGroup.add(marker);  
+
+        pulseMarker = new THREE.Mesh(new THREE.RingGeometry(2.5, 5, 32), new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));  
+        pulseMarker.visible = false;  
+        globeGroup.add(pulseMarker);  
+
+        setupUI();  
+        animate();  
+        fetchData("Delhi", "India", 28.61, 77.20);  
+    }  
+
+    function finishLoading() {  
+        const overlay = document.getElementById('loading-overlay');  
+        if(overlay) {  
+            overlay.style.opacity = '0';  
+            setTimeout(() => { overlay.style.display = 'none'; }, 800);  
+        }  
+    }  
+
+    function setupUI() {  
+        const sideMenu = document.getElementById('side-menu');  
+        const menuBackdrop = document.getElementById('menu-backdrop');  
+        const openBtn = document.getElementById('open-menu');  
+        const closeBtn = document.getElementById('close-menu');  
+
+        const toggleMenu = () => {  
+            const isOpen = sideMenu.classList.contains('open');  
+            if (isOpen) {  
+                sideMenu.classList.remove('open');  
+                menuBackdrop.classList.remove('open');  
+            } else {  
+                sideMenu.classList.add('open');  
+                menuBackdrop.classList.add('open');  
+            }  
+        };  
+
+        // Toggle on menu button click  
+        openBtn.onclick = (e) => {  
+            e.stopPropagation();  
+            toggleMenu();  
+        };  
+
+        // Close on cross button  
+        closeBtn.onclick = (e) => {  
+            e.stopPropagation();  
+            sideMenu.classList.remove('open');  
+            menuBackdrop.classList.remove('open');  
+        };  
+
+        // Close on backdrop click (outside click)  
+        menuBackdrop.onclick = () => {  
+            sideMenu.classList.remove('open');  
+            menuBackdrop.classList.remove('open');  
+        };  
+
+        // Search logic  
+        const input = document.getElementById('search-input');  
+        const dropdown = document.getElementById('results-dropdown');  
+        const searchBtn = document.getElementById('search-go');  
+
+        const triggerSearch = async () => {  
+            const val = input.value.trim();  
+            if (val.length < 2) return;  
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${val}&count=1`);  
+            const data = await res.json();  
+            if (data.results && data.results[0]) {  
+                const i = data.results[0];  
+                fetchData(i.name, i.country, i.latitude, i.longitude);  
+                dropdown.classList.add('hidden');  
+            }  
+        };  
+
+        input.onkeydown = (e) => { if (e.key === "Enter") triggerSearch(); };  
+        searchBtn.onclick = triggerSearch;  
+
+        input.oninput = async (e) => {  
+            const val = e.target.value.trim();  
+            if(val.length < 3) { dropdown.classList.add('hidden'); return; }  
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${val}&count=5`);  
+            const data = await res.json();  
+            if(data.results) {  
+                dropdown.innerHTML = data.results.map(i => `  
+                    <div class="interactive p-4 hover:bg-white/10 cursor-pointer border-b border-white/5"   
+                         onclick="fetchData('${i.name}', '${i.country}', ${i.latitude}, ${i.longitude})">  
+                        <p class="text-xs font-black uppercase tracking-widest">${i.name}</p>  
+                        <p class="text-[8px] opacity-40 uppercase font-bold">${i.country}</p>  
+                    </div>  
+                `).join('');  
+                dropdown.classList.remove('hidden');  
+            }  
+        };  
+
+        // Toggle Cities list  
+        const toggleCitiesBtn = document.getElementById('toggle-city-list');  
+        const cityContainer = document.getElementById('city-list-container');  
+        const chevron = document.getElementById('chevron-icon');  
+        toggleCitiesBtn.onclick = () => {  
+            cityContainer.classList.toggle('show');  
+            chevron.style.transform = cityContainer.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';  
+        };  
+
+        // Polluted cities injection  
+        const pollutedList = document.getElementById('polluted-city-list');  
+        pollutedCities.forEach(c => {  
+            const div = document.createElement('div');  
+            div.className = "interactive polluted-city-card p-4 rounded-xl cursor-pointer border border-white/5";  
+            div.innerHTML = `  
+                <div class="flex justify-between items-center">  
+                    <div>  
+                        <p class="text-[9px] font-black uppercase tracking-widest">${c.name}</p>  
+                        <p class="text-[7px] opacity-40 uppercase font-bold">${c.country}</p>  
+                    </div>  
+                    <span class="text-[7px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase tracking-tighter">${c.level}</span>  
+                </div>  
+            `;  
+            div.onclick = () => fetchData(c.name, c.country, c.lat, c.lon);  
+            pollutedList.appendChild(div);  
+        });  
+
+        // Solar Sync toggle  
+        const solarToggle = document.getElementById('solar-toggle');  
+        solarToggle.onchange = (e) => {  
+            isSolarSync = e.target.checked;  
+            document.getElementById('solar-desc').innerText = isSolarSync ?   
+                "Synced! Ab real-time UTC solar position ke hisab se roshni hogi." :   
+                "Static studio light ka upyog ho raha hai. Isay on karein real-time lighting ke liye.";  
+            updateSolarPosition();  
+        };  
+    }  
+
+    async function fetchData(name, country, lat, lon) {  
+        document.getElementById('results-dropdown').classList.add('hidden');  
+        document.getElementById('side-menu').classList.remove('open');  
+        document.getElementById('menu-backdrop').classList.remove('open');  
+
+        try {  
+            const [wRes, aRes] = await Promise.all([  
+                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`),  
+                fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi&timezone=auto`)  
+            ]);  
+            const w = await wRes.json();  
+            const a = await aRes.json();  
+            const aqi = a.current.us_aqi;  
+            document.getElementById('city-name').innerText = name;  
+            document.getElementById('country-name').innerText = country;  
+            document.getElementById('aqi-val').innerText = aqi;  
+            document.getElementById('temp-val').innerText = Math.round(w.current.temperature_2m);  
+            document.getElementById('humidity-val').innerText = w.current.relative_humidity_2m;  
+            document.getElementById('wind-val').innerText = Math.round(w.current.wind_speed_10m);  
+            document.getElementById('weather-label').innerText = weatherMap[w.current.weather_code] || "Variable";  
+            processSafety(aqi);  
+            moveCamera(lat, lon);  
+        } catch(e) { console.error("Telemetry error:", e); }  
+    }  
+
+    function processSafety(aqi) {  
+        const status = document.getElementById('aqi-status');  
+        const box = document.getElementById('advisory-box');  
+        const card = document.getElementById('data-card');  
+        const aqiText = document.getElementById('aqi-val');  
+        let color, label, msg;  
+        if(aqi <= 50) { color = "#10b981"; label = "Saaf / Good"; msg = "Hawa saaf hai! Bahar ghoomne ka maza lein."; }  
+        else if(aqi <= 100) { color = "#fbbf24"; label = "Moderate"; msg = "Hawa thodi pradushit hai. Sensitive log dhyan dein."; }  
+        else if(aqi <= 200) { color = "#f87171"; label = "Unhealthy"; msg = "Pollution zyada hai. Bahar mask pehen kar niklein."; }  
+        else { color = "#a855f7"; label = "Hazardous"; msg = "Khatarnak level! Bahar jane se bachein."; }  
+        status.innerText = label;  
+        status.style.backgroundColor = `${color}20`;  
+        status.style.color = color;  
+        aqiText.style.color = color;  
+        box.innerText = msg;  
+        card.style.borderBottomColor = color;  
+        marker.material.color.set(color);  
+        pulseMarker.material.color.set(color);  
+    }  
+
+    function moveCamera(lat, lon) {  
+        const phi = (90 - lat) * (Math.PI / 180);  
+        const theta = (lon + 180) * (Math.PI / 180);  
+        const r = 101.5;  
+        const x = -(r * Math.sin(phi) * Math.cos(theta));  
+        const y = r * Math.cos(phi);  
+        const z = r * Math.sin(phi) * Math.sin(theta);  
+        marker.position.set(x, y, z);  
+        marker.lookAt(0, 0, 0);  
+        marker.visible = true;  
+        pulseMarker.position.set(x, y, z);  
+        pulseMarker.lookAt(0, 0, 0);  
+        pulseMarker.visible = true;  
+        controls.autoRotate = false;  
+        gsap.to(camera.position, {   
+            x: x * 3.5, y: y * 3.5, z: z * 3.5, duration: 2,  
+            onComplete: () => { controls.autoRotate = true; }  
+        });  
+    }  
+
+    function resetCamera() {  
+        controls.autoRotate = true;  
+        marker.visible = false; pulseMarker.visible = false;  
+        gsap.to(camera.position, { x: 0, y: 0, z: window.innerWidth < 768 ? 550 : 450, duration: 2 });  
+    }  
+
+    function updateSolarPosition() {  
+        if (!isSolarSync) { sunLight.position.set(500, 300, 400); ambientLight.intensity = 0.5; return; }  
+        const now = new Date();  
+        const utcHours = now.getUTCHours() + now.getUTCMinutes() / 60;  
+        const sunLon = -((utcHours / 24) * 360 - 180);   
+        const sunLat = 23.5 * Math.sin((2 * Math.PI * (172)) / 365);   
+        const phi = (90 - sunLat) * (Math.PI / 180);  
+        const theta = (sunLon + 180) * (Math.PI / 180);  
+        const r = 500;  
+        sunLight.position.set(-(r * Math.sin(phi) * Math.cos(theta)), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));  
+        ambientLight.intensity = 0.2;   
+    }  
+
+    function animate() {  
+        requestAnimationFrame(animate);  
+        controls.update();  
+        if(clouds) clouds.rotation.y += 0.0001;  
+        if(pulseMarker.visible) {  
+            const s = 1 + (Math.sin(Date.now() * 0.005) + 1) * 0.5;  
+            pulseMarker.scale.set(s, s, s);  
+            pulseMarker.material.opacity = 0.8 - (s-1);  
+        }  
+        if(isSolarSync) updateSolarPosition();  
+        renderer.render(scene, camera);  
+    }  
+
+    setInterval(() => {  
+        const d = new Date();  
+        document.getElementById('digital-clock').innerText = d.toLocaleTimeString('en-GB');  
+        document.getElementById('utc-label').innerText = "UTC Engine Sync: " + d.toISOString().split('T')[1].split('.')[0];  
+    }, 1000);  
+
+    window.onload = init;  
+    window.onresize = () => {  
+        camera.aspect = window.innerWidth / window.innerHeight;  
+        camera.updateProjectionMatrix();  
+        renderer.setSize(window.innerWidth, window.innerHeight);  
+    };  
+</script>
+
+</body>  
+</html>  
