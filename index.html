@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Global Pulse - Solar & Polluted Cities</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body class="bg-black">
+    <!-- Loading Screen -->
+    <div id="loading-overlay" class="fixed inset-0 flex flex-col items-center justify-center bg-black overflow-hidden">
+        <div class="scanline"></div>
+        <div class="relative flex items-center justify-center mb-12">
+            <div class="loader-ring"></div>
+            <div class="loader-ring"></div>
+            <div class="loader-ring"></div>
+            <div class="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_20px_#3b82f6]"></div>
+        </div>
+        <div class="text-center relative">
+            <h1 class="text-3xl font-black uppercase tracking-[0.4em] mb-2 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                GLOBAL PULSE
+            </h1>
+            <div class="flex flex-col items-center">
+                <p class="pulse-text text-[10px] uppercase font-bold tracking-[0.3em] text-blue-400/80">
+                    Satellite Link Sthapit kiya ja raha hai...
+                </p>
+                <div class="mt-4 w-48 h-[1px] bg-white/10 relative overflow-hidden">
+                    <div id="loader-bar" class="absolute left-0 top-0 h-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="loader-percent" class="mt-2 text-[8px] font-mono text-white/30 tracking-widest">00%</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div id="menu-backdrop"></div>
+
+    <!-- Side Menu -->
+    <div id="side-menu"></div>
+
+    <!-- UI Overlay -->
+    <main class="ui-layer"></main>
+
+    <script src="script.js"></script>
+</body>
+</html>
