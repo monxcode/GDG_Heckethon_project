@@ -1,17 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Pulse - Solar & Polluted Cities</title>
-    <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-black">
-    <!-- Loading Screen -->
+
     <div id="loading-overlay" class="fixed inset-0 flex flex-col items-center justify-center bg-black overflow-hidden">
         <div class="scanline"></div>
         <div class="relative flex items-center justify-center mb-12">
@@ -39,11 +41,119 @@
     <div id="canvas-container"></div>
     <div id="menu-backdrop"></div>
 
-    <!-- Side Menu -->
-    <div id="side-menu"></div>
+    <div id="side-menu" class="fixed top-0 right-0 h-full w-full sm:w-[380px] glass rounded-none border-l border-white/10 flex flex-col shadow-2xl overflow-hidden">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+            <div>
+                <h2 class="text-xs font-black uppercase tracking-widest text-blue-400">Control Center</h2>
+                <p class="text-[9px] opacity-40 uppercase font-bold">Prithvi Simulation Settings</p>
+            </div>
+            <button id="close-menu" class="interactive p-2 hover:bg-white/10 rounded-full transition-all text-white/70 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-5 space-y-6 custom-scroll">
+            <div class="bg-white/5 rounded-2xl p-5 border border-white/10">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-yellow-400">Solar Sync</p>
+                        <p class="text-[9px] opacity-40 uppercase font-bold">UTC Time Lighting</p>
+                    </div>
+                    <label class="toggle-switch interactive">
+                        <input type="checkbox" id="solar-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <p id="solar-desc" class="text-[10px] text-white/50 leading-relaxed italic">Static studio light ka upyog ho raha hai. Isay on karein real-time lighting ke liye.</p>
+            </div>
 
-    <!-- UI Overlay -->
-    <main class="ui-layer"></main>
+            <div class="space-y-4">
+                <button id="toggle-city-list" class="interactive w-full py-4 glass border border-red-500/30 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-500/10 transition-all text-red-500">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/></svg>
+                    Duniya ke 10 Sabse Pradushit Sheher
+                    <svg id="chevron-icon" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="city-list-container" class="space-y-2">
+                    <div id="polluted-city-list" class="grid grid-cols-1 gap-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 border-t border-white/5 bg-white/5">
+            <button onclick="resetCamera()" class="interactive w-full py-4 glass text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all">Camera Reset Karein</button>
+        </div>
+    </div>
+
+    <main class="ui-layer p-4 md:p-10">
+        <div class="flex flex-col md:flex-row justify-between items-start gap-4">
+            <div class="flex w-full md:w-auto justify-between md:justify-start gap-3">
+                <div class="glass p-4 md:p-5 flex items-center gap-4 border-l-4 border-blue-500">
+                    <div class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse"></div>
+                    <h1 class="text-[11px] md:text-xs font-black uppercase tracking-widest">Global Pulse</h1>
+                </div>
+                <button id="open-menu" class="interactive glass p-4 md:p-5 px-5 hover:bg-white/10 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+
+            <div class="relative w-full md:w-[420px]">
+                <div class="glass p-1.5 flex items-center pl-4 gap-2 border border-white/10 focus-within:border-blue-500 transition-colors">
+                    <input id="search-input" type="text" placeholder="Sheher ka naam likhein..." class="interactive bg-transparent border-none outline-none text-sm w-full px-2 placeholder:text-white/20 font-medium">
+                    <button id="search-go" class="interactive bg-blue-600 hover:bg-blue-500 text-white p-3 px-6 rounded-xl transition-all">
+                        <span class="text-[10px] font-black uppercase tracking-widest">Search</span>
+                    </button>
+                </div>
+                <div id="results-dropdown" class="absolute top-full left-0 w-full mt-2 glass hidden overflow-hidden z-50"></div>
+            </div>
+        </div>
+
+        <div class="mt-auto flex flex-col md:flex-row items-end justify-between gap-6">
+            <div id="data-card" class="glass p-6 md:p-8 border-b-4 border-blue-500 transition-all duration-500 w-full md:max-w-[550px]">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 id="city-name" class="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none">Delhi</h2>
+                        <p id="country-name" class="text-[9px] uppercase opacity-40 font-bold tracking-[0.2em] mt-2">India</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[8px] uppercase font-black opacity-30 mb-1">AQI Index</p>
+                        <p id="aqi-val" class="text-5xl md:text-6xl font-black leading-none">--</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[8px] uppercase font-black opacity-30 mb-1">Tapman</p>
+                        <p class="text-xl font-black truncate"><span id="temp-val">--</span><span class="text-xs text-blue-400">°C</span></p>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[8px] uppercase font-black opacity-30 mb-1">Humidity</p>
+                        <p class="text-xl font-black truncate"><span id="humidity-val">--</span><span class="text-xs text-blue-400">%</span></p>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[8px] uppercase font-black opacity-30 mb-1">Hawa</p>
+                        <p class="text-xl font-black truncate"><span id="wind-val">--</span><span class="text-[10px] text-blue-400 ml-0.5">km/h</span></p>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[8px] uppercase font-black opacity-30 mb-1">Mausam</p>
+                        <p id="weather-label" class="text-[9px] font-black uppercase tracking-tight text-blue-400 mt-1 truncate">Jaanch jaari hai...</p>
+                    </div>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/10">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-[9px] font-black uppercase tracking-widest text-white/30">Suraksha Salah</p>
+                        <div id="aqi-status" class="risk-badge bg-white/10">--</div>
+                    </div>
+                    <p id="advisory-box" class="text-[10px] md:text-[11px] font-semibold leading-relaxed text-white/70 italic">Data load ho raha hai...</p>
+                </div>
+            </div>
+
+            <div class="hidden md:block glass p-6 px-10 text-right">
+                <p id="digital-clock" class="text-5xl font-black tracking-tighter">00:00:00</p>
+                <p id="utc-label" class="text-[8px] font-black opacity-20 tracking-[0.4em] uppercase mt-1">UTC Synchronizing...</p>
+            </div>
+        </div>
+    </main>
 
     <script src="script.js"></script>
 </body>
