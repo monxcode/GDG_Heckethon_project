@@ -1,113 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
 
-:root {
-    --blue-glow: rgba(59, 130, 246, 0.5);
+body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: #000; }
+
+.glass {
+    background: rgba(10, 10, 20, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
 }
 
-body {
-    margin: 0;
-    overflow: hidden;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #000;
-    color: white;
-    touch-action: manipulation;
-}
+.ui-layer { pointer-events: none; }
+.ui-layer * { pointer-events: auto; }
 
-.interactive {
-    pointer-events: auto;
-    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-    cursor: pointer;
-}
-
-.interactive:active {
-    transform: scale(0.95);
-}
-
-/* Loading Overlay */
-#loading-overlay {
-    z-index: 9999;
-    background: radial-gradient(circle at center, #0a0a1a 0%, #000 100%);
-    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
+/* Loader */
 .loader-ring {
-    position: absolute;
-    width: 200px;
-    height: 200px;
+    width: 80px; height: 80px;
+    border: 3px solid rgba(59, 130, 246, 0.1);
+    border-top: 3px solid #3b82f6;
     border-radius: 50%;
-    border: 2px solid transparent;
-    border-top-color: #3b82f6;
-    animation: spin 2s linear infinite;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
 }
-
-.loader-ring:nth-child(2) { width: 160px; height: 160px; border-top-color: #1d4ed8; animation: spin 1.5s linear reverse infinite; }
-.loader-ring:nth-child(3) { width: 120px; height: 120px; border-top-color: #60a5fa; animation: spin 3s linear infinite; }
-
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.pulse-text { animation: pulse-glow 2s ease-in-out infinite; }
+/* Custom Scrollbar */
+.custom-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.3); border-radius: 10px; }
 
-@keyframes pulse-glow {
-    0%, 100% { opacity: 0.5; filter: blur(1px); }
-    50% { opacity: 1; filter: blur(0px); text-shadow: 0 0 15px #3b82f6; }
-}
-
-.scanline {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to bottom, transparent 0%, rgba(59, 130, 246, 0.05) 50%, transparent 100%);
-    background-size: 100% 4px;
-    animation: scan 4s linear infinite;
-    pointer-events: none;
-}
-
-@keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
-
-/* UI Styling */
-.glass {
-    background: rgba(5, 5, 12, 0.85);
-    backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-}
-
-#canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-.ui-layer { position: relative; z-index: 10; pointer-events: none; height: 100vh; display: flex; flex-direction: column; }
-
-#menu-backdrop {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-    opacity: 0; pointer-events: none; transition: opacity 0.4s ease; z-index: 90;
-}
-#menu-backdrop.open { opacity: 1; pointer-events: auto; }
-
-#side-menu {
-    transform: translateX(100%);
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 100;
-}
-#side-menu.open { transform: translateX(0); }
-
-.custom-scroll::-webkit-scrollbar { width: 4px; }
-.custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
-/* Toggle Switch */
-.toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
+/* Toggle */
+.toggle-switch { position: relative; width: 40px; height: 20px; }
+.toggle-switch input { opacity: 0; }
 .slider {
-    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 24px;
+    position: absolute; cursor: pointer; inset: 0;
+    background: rgba(255,255,255,0.1); transition: .4s; border-radius: 20px;
 }
 .slider:before {
-    position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
-    background-color: white; transition: .4s; border-radius: 50%;
+    position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+    background: white; transition: .4s; border-radius: 50%;
 }
-input:checked + .slider { background-color: #3b82f6; }
+input:checked + .slider { background: #3b82f6; }
 input:checked + .slider:before { transform: translateX(20px); }
 
-.polluted-city-card { background: rgba(255, 255, 255, 0.03); border-left: 2px solid #ef4444; }
-.polluted-city-card:hover { background: rgba(239, 68, 68, 0.1); }
-
-.risk-badge { padding: 4px 10px; border-radius: 50px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
-
-#city-list-container { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; }
-#city-list-container.show { max-height: 1000px; }
+#canvas-container { position: fixed; inset: 0; z-index: 1; }
+#menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: 0.4s; z-index: 90; }
+#menu-backdrop.open { opacity: 1; pointer-events: auto; }
